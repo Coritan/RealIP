@@ -93,29 +93,32 @@ public class TCPShieldPacketHandler {
 			String extraData = null;
 			String[] payload = packet.getPayloadString().split("///");
 
-			if (payload.length != 4)
+			// Accept both 3-part (no signature) and 4-part (with signature) payloads
+			if (payload.length != 3 && payload.length != 4)
 				if (cidrValidator.validate(inetAddress))
 					return; // Allow connection with no processing
 				else
 					throw new InvalidPayloadException("length: " + payload.length + ", payload: " + Arrays.toString(payload) + ", raw payload: " + packet.getPayloadString());
 
 			int nullIndex;
-			if ((nullIndex = payload[3].indexOf('\0')) != -1) { // FML tagged payload
-				String originalData = payload[3];
-				payload[3] = originalData.substring(0, nullIndex);
+			// Check for FML tagged payload in the last element
+			int lastIndex = payload.length - 1;
+			if ((nullIndex = payload[lastIndex].indexOf('\0')) != -1) { // FML tagged payload
+				String originalData = payload[lastIndex];
+				payload[lastIndex] = originalData.substring(0, nullIndex);
 				extraData = originalData.substring(nullIndex);
 			}
 
 			String hostname = payload[0];
 			String ipData = payload[1];
 			int timestamp = Integer.parseInt(payload[2]);
-			String signature = payload[3];
+			String signature = payload.length == 4 ? payload[3] : null;
 
 			String[] ipParts;
 			String host;
 			int port;
 
-			if (timestamp == 0 && GeyserUtils.GEYSER_SUPPORT_ENABLED) {
+			if (timestamp == 0 && GeyserUtils.GEYSER_SUPPORT_ENABLED && payload.length == 4) {
 				// Remap the altered layout
 				ipData = payload[0];
 				signature = payload[1];
@@ -139,8 +142,8 @@ public class TCPShieldPacketHandler {
 					throw new TimestampValidationException(timestampValidator, timestamp);
 
 
-				// Signature validation disabled
-				// if (!signatureValidator.validate(reconstructedPayload, signature))
+				// Signature validation disabled - no longer required
+				// if (signature != null && !signatureValidator.validate(reconstructedPayload, signature))
 				// 	throw new SignatureValidationException();
 			}
 
