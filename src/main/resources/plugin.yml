@@ -1,9 +1,9 @@
-name: TCPShield
+name: MCSH
 version: 2.8.1
-main: net.tcpshield.tcpshield.bukkit.TCPShieldBukkit
+main: com.coritan.mcsh.bukkit.MCSHBukkit
 softdepend:
 - ProtocolLib
 - floodgate
-author: https://tcpshield.com
-description: TCPShield IP parsing capabilities for Velocity
+author: https://coritan.com
+description: MCSH IP parsing capabilities for Bukkit/Spigot/Paper
 api-version: 1.16

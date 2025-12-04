@@ -1,6 +1,6 @@
-name: TCPShield
+name: MCSH
 version: 2.8.1
-main: net.tcpshield.tcpshield.bungee.TCPShieldBungee
-author: https://tcpshield.com
+main: com.coritan.mcsh.bungee.MCSHBungee
+author: https://coritan.com
 softdepends:
 - floodgate

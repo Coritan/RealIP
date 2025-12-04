@@ -27,8 +27,8 @@ plugins {
 // Variables
 // --
 version = '2.8.1'
-group = 'net.tcpshield.tcpshield'
-archivesBaseName = 'TCPShield'
+group = 'com.coritan.mcsh'
+archivesBaseName = 'MCSH'
 
 // --
 // Misc.

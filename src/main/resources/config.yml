@@ -1,4 +1,4 @@
-# Please keep this as true in while using TCPShield!
+# Please keep this as true in while using MCSH!
 only-allow-proxy-connections: true
 
 # available modes: system (uses the system time), htpdate (uses a synchronized date) & off (deactivates timestamp validation)
