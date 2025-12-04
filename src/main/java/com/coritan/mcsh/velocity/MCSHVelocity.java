@@ -45,7 +45,7 @@ public class MCSHVelocity implements MCSHPlugin {
 	@Subscribe
 	public void onProxyInitialization(ProxyInitializeEvent e) {
 		try {
-			configProvider = new VelocityConfig(dataFolder.toFile(), this);
+			configProvider = new VelocityConfig(dataFolder.toFile());
 			debugger = Debugger.createDebugger(this);
 			packetHandler = new MCSHPacketHandler(this);
 

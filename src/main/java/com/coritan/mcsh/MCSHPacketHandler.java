@@ -7,18 +7,12 @@ import com.coritan.mcsh.util.exception.parse.InvalidPayloadException;
 import com.coritan.mcsh.util.exception.parse.TimestampValidationException;
 import com.coritan.mcsh.util.exception.phase.HandshakeException;
 import com.coritan.mcsh.util.exception.phase.InvalidSecretException;
-import com.coritan.mcsh.util.validation.SignatureValidator;
 import com.coritan.mcsh.util.validation.cidr.CIDRValidator;
 import com.coritan.mcsh.util.validation.timestamp.TimestampValidator;
-import com.coritan.mcsh.util.validation.timestamp.impl.HTPDateTimestampValidator;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
 /**
@@ -29,7 +23,6 @@ public class MCSHPacketHandler {
 	private final MCSHPlugin plugin;
 
 	private TimestampValidator timestampValidator;
-	private SignatureValidator signatureValidator;
 	private CIDRValidator cidrValidator;
 
 	/**
@@ -37,44 +30,16 @@ public class MCSHPacketHandler {
 	 *
 	 * @param plugin The MCSH plugin
 	 */
-	public MCSHPacketHandler(MCSHPlugin plugin) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+	public MCSHPacketHandler(MCSHPlugin plugin) {
 		this.plugin = plugin;
-
 		initValidators();
 	}
 
 	/**
 	 * Initiates the validators
-	 *
-	 * @throws NoSuchAlgorithmException SignatureValidator exception
-	 * @throws IOException              SignatureValidator exception
-	 * @throws InvalidKeySpecException  SignatureValidator exception
 	 */
-	private void initValidators() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-		signatureValidator = new SignatureValidator();
-
-		switch (plugin.getConfigProvider().getTimestampValidationMode().toLowerCase()) {
-			case "system": {
-				timestampValidator = TimestampValidator.createDefault(plugin);
-				break;
-			}
-			case "htpdate": {
-				timestampValidator = new HTPDateTimestampValidator(plugin);
-				break;
-			}
-			case "off": {
-				timestampValidator = TimestampValidator.createEmpty(plugin);
-				break;
-			}
-			default: {
-				plugin.getDebugger().warn(
-						"Unknown timestamp validation mode \"%s\"! Disabling timestamp validation.",
-						plugin.getConfigProvider().getTimestampValidationMode());
-				timestampValidator = TimestampValidator.createEmpty(plugin);
-				break;
-			}
-		}
-
+	private void initValidators() {
+		timestampValidator = TimestampValidator.createDefault(plugin);
 		cidrValidator = new CIDRValidator(plugin);
 	}
 
@@ -93,17 +58,15 @@ public class MCSHPacketHandler {
 			String extraData = null;
 			String[] payload = packet.getPayloadString().split("///");
 
-			// Accept both 3-part (no signature) and 4-part (with signature) payloads
 			if (payload.length != 3 && payload.length != 4)
 				if (cidrValidator.validate(inetAddress))
-					return; // Allow connection with no processing
+					return;
 				else
 					throw new InvalidPayloadException("length: " + payload.length + ", payload: " + Arrays.toString(payload) + ", raw payload: " + packet.getPayloadString());
 
 			int nullIndex;
-			// Check for FML tagged payload in the last element
 			int lastIndex = payload.length - 1;
-			if ((nullIndex = payload[lastIndex].indexOf('\0')) != -1) { // FML tagged payload
+			if ((nullIndex = payload[lastIndex].indexOf('\0')) != -1) {
 				String originalData = payload[lastIndex];
 				payload[lastIndex] = originalData.substring(0, nullIndex);
 				extraData = originalData.substring(nullIndex);
@@ -119,12 +82,10 @@ public class MCSHPacketHandler {
 			int port;
 
 			if (timestamp == 0 && GeyserUtils.GEYSER_SUPPORT_ENABLED && payload.length == 4) {
-				// Remap the altered layout
 				ipData = payload[0];
 				signature = payload[1];
 				hostname = payload[3];
 
-				// This is annoying having to have this in both blocks but w/e
 				ipParts = ipData.split(":");
 				host = ipParts[0];
 				port = Integer.parseInt(ipParts[1]);
@@ -136,22 +97,15 @@ public class MCSHPacketHandler {
 				ipParts = ipData.split(":");
 				host = ipParts[0];
 				port = Integer.parseInt(ipParts[1]);
-				String reconstructedPayload = hostname + "///" + host + ":" + port + "///" + timestamp;
 
 				if (!timestampValidator.validate(timestamp))
 					throw new TimestampValidationException(timestampValidator, timestamp);
-
-
-				// Signature validation disabled - no longer required
-				// if (signature != null && !signatureValidator.validate(reconstructedPayload, signature))
-				// 	throw new SignatureValidationException();
 			}
 
 			InetSocketAddress newIP = new InetSocketAddress(host, port);
 			player.setIP(newIP);
 
 			if (extraData != null) hostname = hostname + extraData;
-
 
 			packet.setPacketHostname(hostname);
 		} catch (NumberFormatException | InvalidPayloadException e) {
