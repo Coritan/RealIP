@@ -4,7 +4,6 @@ import net.tcpshield.tcpshield.geyser.GeyserUtils;
 import net.tcpshield.tcpshield.provider.PacketProvider;
 import net.tcpshield.tcpshield.provider.PlayerProvider;
 import net.tcpshield.tcpshield.util.exception.parse.InvalidPayloadException;
-import net.tcpshield.tcpshield.util.exception.parse.SignatureValidationException;
 import net.tcpshield.tcpshield.util.exception.parse.TimestampValidationException;
 import net.tcpshield.tcpshield.util.exception.phase.HandshakeException;
 import net.tcpshield.tcpshield.util.exception.phase.InvalidSecretException;
@@ -140,8 +139,9 @@ public class TCPShieldPacketHandler {
 					throw new TimestampValidationException(timestampValidator, timestamp);
 
 
-				if (!signatureValidator.validate(reconstructedPayload, signature))
-					throw new SignatureValidationException();
+				// Signature validation disabled
+				// if (!signatureValidator.validate(reconstructedPayload, signature))
+				// 	throw new SignatureValidationException();
 			}
 
 			InetSocketAddress newIP = new InetSocketAddress(host, port);
@@ -167,14 +167,6 @@ public class TCPShieldPacketHandler {
 					"%s[%s/%s] provided valid handshake information, but timestamp was not valid. " +
 							"Provided timestamp: %d vs. system timestamp: %d. Please check your machine time. Timestamp validation mode: %s",
 					player.getName(), player.getUUID(), player.getIP(), e.getTimestamp(), e.getTimestampValidator().getUnixTime(), plugin.getConfigProvider().getTimestampValidationMode());
-			if (plugin.getConfigProvider().isOnlyProxy())
-				player.disconnect();
-
-			throw new HandshakeException(e);
-		} catch (SignatureValidationException e) {
-			plugin.getDebugger().warn(
-					"%s[%s/%s] provided valid handshake information, but signing check failed. Raw payload = \"%s\"",
-					player.getName(), player.getUUID(), player.getIP(), packet.getPayloadString());
 			if (plugin.getConfigProvider().isOnlyProxy())
 				player.disconnect();
 
