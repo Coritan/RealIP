@@ -53,7 +53,12 @@ public class CIDRValidator {
 	private List<String> loadWhitelists() throws FileNotFoundException {
 		List<String> whitelists = new ArrayList<>();
 
-		for (File file : Objects.requireNonNull(ipWhitelistFolder.listFiles())) {
+		File[] files = ipWhitelistFolder.listFiles();
+		if (files == null || files.length == 0) {
+			return whitelists;
+		}
+
+		for (File file : files) {
 			if (file.isDirectory())
 				continue;
 
